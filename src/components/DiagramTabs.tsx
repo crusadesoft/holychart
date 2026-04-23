@@ -1,0 +1,264 @@
+import { useState, useRef, useEffect } from 'react'
+import { useAppStore, selectResolvedTheme } from '../store/useAppStore'
+import { Tooltip } from './Tooltip'
+
+export function DiagramTabs() {
+  const { diagrams, activeDiagramId, createDiagram, switchDiagram, renameDiagram, deleteDiagram, clearAllDiagrams, reorderDiagrams } = useAppStore()
+  const resolvedTheme = useAppStore(selectResolvedTheme)
+
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmClearAll, setConfirmClearAll] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editingId) inputRef.current?.select()
+  }, [editingId])
+
+  const startEdit = (id: string, name: string) => {
+    setEditingId(id)
+    setEditValue(name)
+  }
+
+  const commitEdit = () => {
+    if (editingId) {
+      renameDiagram(editingId, editValue.trim() || 'Untitled')
+      setEditingId(null)
+    }
+  }
+
+  return (
+    <>
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 0, left: 0, right: 0,
+        height: 34,
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: 8,
+        gap: 2,
+        background: 'var(--surface-dim)',
+        borderTop: '1px solid var(--border-subtle)',
+        backdropFilter: 'var(--backdrop-blur)',
+        zIndex: 40,
+        userSelect: 'none',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        scrollbarWidth: 'none',
+      }}
+    >
+      {/* Clear all button */}
+      <Tooltip content="Clear all diagrams">
+        <button
+          onClick={() => setConfirmClearAll(true)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-tab-inactive)', fontSize: 12, lineHeight: 1,
+            padding: '0 8px', height: 26,
+            display: 'flex', alignItems: 'center',
+            borderRadius: 'var(--radius-sm)',
+            transition: 'color 0.12s',
+            fontFamily: 'var(--font-ui)',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--danger)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tab-inactive)' }}
+        >
+          Clear all
+        </button>
+      </Tooltip>
+
+      {diagrams.map((diagram, index) => {
+        const isActive = diagram.id === activeDiagramId
+        const isEditing = editingId === diagram.id
+
+        return (
+          <div
+            key={diagram.id}
+            draggable={!isEditing}
+            onDragStart={() => setDragIndex(index)}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+            onDrop={() => { if (dragIndex !== null && dragIndex !== index) reorderDiagrams(dragIndex, index); setDragIndex(null) }}
+            onDragEnd={() => setDragIndex(null)}
+            onClick={() => !isEditing && switchDiagram(diagram.id)}
+            onDoubleClick={() => startEdit(diagram.id, diagram.name)}
+            onContextMenu={(e) => { e.preventDefault(); setContextMenu({ id: diagram.id, x: e.clientX, y: e.clientY }) }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              height: 26,
+              padding: '0 8px 0 10px',
+              borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+              cursor: isEditing ? 'default' : 'pointer',
+              background: isActive
+                ? 'var(--accent-bg)'
+                : 'transparent',
+              borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+              transition: 'background 0.12s',
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'var(--hover-bg-subtle)'
+              const btn = e.currentTarget.querySelector<HTMLButtonElement>('[data-close-btn]')
+              if (btn) btn.style.opacity = '1'
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent'
+              const btn = e.currentTarget.querySelector<HTMLButtonElement>('[data-close-btn]')
+              if (btn) btn.style.opacity = '0'
+            }}
+          >
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={commitEdit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitEdit()
+                  if (e.key === 'Escape') setEditingId(null)
+                  e.stopPropagation()
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'var(--text)',
+                  fontSize: 12,
+                  fontFamily: 'inherit',
+                  width: Math.max(60, editValue.length * 7.5),
+                  padding: 0,
+                }}
+              />
+            ) : (
+              <span style={{ fontSize: 12, color: isActive ? 'var(--accent-text)' : 'var(--text-tab-inactive)', whiteSpace: 'nowrap' }}>
+                {diagram.name}
+              </span>
+            )}
+
+            {diagrams.length > 1 && !isEditing && (
+              <Tooltip content="Close diagram">
+              <button
+                data-close-btn
+                onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(diagram.id) }}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--text-tab-inactive)', fontSize: 13, lineHeight: 1,
+                  padding: '0 0 0 2px', opacity: 0,
+                  transition: 'opacity 0.1s',
+                  display: 'flex', alignItems: 'center',
+                }}
+              >
+                ×
+              </button>
+              </Tooltip>
+            )}
+          </div>
+        )
+      })}
+
+      {/* New diagram button */}
+      <Tooltip content="New diagram (⌘⇧N)">
+      <button
+        onClick={createDiagram}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: 'var(--text-tab-inactive)', fontSize: 18, lineHeight: 1,
+          padding: '0 8px', height: 26,
+          display: 'flex', alignItems: 'center',
+          borderRadius: 'var(--radius-sm)',
+          transition: 'color 0.12s',
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text)' }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tab-inactive)' }}
+      >
+        +
+      </button>
+      </Tooltip>
+    </div>
+
+    {contextMenu && <>
+      <div onClick={() => setContextMenu(null)} style={{ position: 'fixed', inset: 0, zIndex: 149 }} />
+      <div style={{
+        position: 'fixed', left: contextMenu.x, top: contextMenu.y,
+        transform: 'translateY(-100%)',
+        zIndex: 150, background: 'var(--surface-overlay)', border: '1px solid var(--border-muted)',
+        borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
+        backdropFilter: 'var(--backdrop-blur)', padding: '4px 0', minWidth: 140,
+      }}>
+        {[
+          { label: 'Rename', action: () => { const d = diagrams.find(d => d.id === contextMenu.id); if (d) startEdit(d.id, d.name); setContextMenu(null) } },
+          ...(diagrams.length > 1 ? [{ label: 'Delete', danger: true, action: () => { setConfirmDeleteId(contextMenu.id); setContextMenu(null) } }] : []),
+        ].map((item, i) => (
+          <button key={i} onClick={item.action} style={{
+            display: 'block', width: '100%', textAlign: 'left',
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '5px 12px', fontSize: 12, fontFamily: 'var(--font-ui)',
+            color: 'danger' in item && item.danger ? 'var(--danger)' : 'var(--text)',
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--hover-bg-subtle)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'none' }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </>}
+
+    {confirmDeleteId && <>
+      <div onClick={() => setConfirmDeleteId(null)} style={{ position: 'fixed', inset: 0, zIndex: 399 }} />
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        zIndex: 400, background: 'var(--surface-overlay)', border: '1px solid var(--border-muted)',
+        borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
+        backdropFilter: 'var(--backdrop-blur)', padding: '20px 24px', minWidth: 280,
+      }}>
+        <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 6 }}>
+          Delete <strong>"{diagrams.find(d => d.id === confirmDeleteId)?.name}"</strong>?
+        </p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>This cannot be undone.</p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={() => setConfirmDeleteId(null)} style={{
+            background: 'none', border: '1px solid var(--border-muted)', borderRadius: 'var(--radius-md)',
+            color: 'var(--text-secondary)', padding: '5px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+          }}>Cancel</button>
+          <button onClick={() => { deleteDiagram(confirmDeleteId); setConfirmDeleteId(null) }} style={{
+            background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)',
+            color: 'var(--danger)', padding: '5px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+          }}>Delete</button>
+        </div>
+      </div>
+    </>}
+
+    {confirmClearAll && <>
+      <div onClick={() => setConfirmClearAll(false)} style={{ position: 'fixed', inset: 0, zIndex: 399 }} />
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        zIndex: 400, background: 'var(--surface-overlay)', border: '1px solid var(--border-muted)',
+        borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
+        backdropFilter: 'var(--backdrop-blur)', padding: '20px 24px', minWidth: 280,
+      }}>
+        <p style={{ fontSize: 14, color: 'var(--text)', marginBottom: 6 }}>
+          Clear all {diagrams.length} diagrams?
+        </p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}>All diagrams will be deleted and replaced with a blank workspace. This cannot be undone.</p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={() => setConfirmClearAll(false)} style={{
+            background: 'none', border: '1px solid var(--border-muted)', borderRadius: 'var(--radius-md)',
+            color: 'var(--text-secondary)', padding: '5px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+          }}>Cancel</button>
+          <button onClick={() => { clearAllDiagrams(); setConfirmClearAll(false) }} style={{
+            background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)',
+            color: 'var(--danger)', padding: '5px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)',
+          }}>Clear all</button>
+        </div>
+      </div>
+    </>}
+    </>
+  )
+}

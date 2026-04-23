@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0a0a12" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" href="/icon-512.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="canonical" href="https://holychart.com/" />
+
+    <title>HolyChart — Trackpad-first infinite canvas diagramming tool</title>
+    <meta name="description" content="HolyChart is a free, trackpad-first diagramming tool with an infinite canvas. Pan, pinch-zoom, and twist-to-rotate to sketch boxes, icons, text, and arrows. Works in your browser — no signup." />
+    <meta name="keywords" content="diagram tool, diagramming, flowchart, infinite canvas, trackpad, whiteboard, online diagram editor, free diagram tool, HolyChart" />
+    <meta name="author" content="CrusadeSoft" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HolyChart" />
+    <meta property="og:title" content="HolyChart — Trackpad-first infinite canvas diagramming tool" />
+    <meta property="og:description" content="Free in-browser diagramming tool with an infinite canvas. Trackpad gestures for pan, zoom, and rotate. Boxes, icons, text, and arrows. No signup." />
+    <meta property="og:url" content="https://holychart.com/" />
+    <meta property="og:image" content="https://holychart.com/icon-512.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="HolyChart — Trackpad-first infinite canvas diagramming tool" />
+    <meta name="twitter:description" content="Free in-browser diagramming tool with an infinite canvas. Trackpad gestures for pan, zoom, and rotate." />
+    <meta name="twitter:image" content="https://holychart.com/icon-512.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "HolyChart",
+        "url": "https://holychart.com/",
+        "description": "Trackpad-first infinite canvas diagramming tool. Sketch boxes, icons, text, and arrows in the browser.",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+
+    <script>
+      try {
+        var s = JSON.parse(localStorage.getItem('holychart:v1') || '{}')
+        var t = s.theme && s.theme !== 'system' ? s.theme : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.setAttribute('data-theme', t)
+      } catch(e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <noscript>
+        <main style="max-width:640px;margin:48px auto;padding:0 24px;font-family:system-ui,sans-serif;line-height:1.5">
+          <h1>HolyChart</h1>
+          <p>HolyChart is a free, trackpad-first infinite canvas diagramming tool that runs entirely in your browser.</p>
+          <h2>Features</h2>
+          <ul>
+            <li>Infinite canvas with pan, pinch-zoom, and two-finger twist-to-rotate</li>
+            <li>Boxes, text, icons, and arrows with multiple styles</li>
+            <li>Fuzzy icon search across 150+ curated Material Design Icons</li>
+            <li>Multi-select, group move, and rubber-band selection</li>
+            <li>Multiple diagram tabs auto-saved to local storage</li>
+            <li>JSON export and import</li>
+            <li>Dark, light, and system themes</li>
+          </ul>
+          <p>HolyChart requires JavaScript. Please enable it to use the editor.</p>
+        </main>
+      </noscript>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
